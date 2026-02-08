@@ -1,0 +1,34 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="blue_gradient" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+    <filter id="glass" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="15" result="blur" />
+      <feOffset in="blur" dx="10" dy="10" result="offsetBlur" />
+      <feMerge>
+        <feMergeNode in="offsetBlur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Main Shield/Container Body -->
+  <rect x="64" y="64" width="384" height="384" rx="96" fill="url(#blue_gradient)" filter="url(#glass)" />
+  
+  <!-- Inner Glass Reflection (Subtle) -->
+  <path d="M100 100 Q 256 160 412 100 Q 380 300 100 100" fill="white" fill-opacity="0.1" />
+
+  <!-- Pulse Line -->
+  <path d="M112 256 H 176 L 208 160 L 272 352 L 304 256 H 400" 
+        stroke="white" 
+        stroke-width="32" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
+        
+  <!-- Pulse Dot (Active) -->
+  <circle cx="400" cy="256" r="16" fill="#EAF4FF">
+    <animate attributeName="opacity" values="1;0;1" dur="2s" repeatCount="indefinite" />
+  </circle>
+</svg>
