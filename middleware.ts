@@ -1,32 +1,52 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-// Protected routes that require authentication
-const protectedRoutes = [
-  "/dashboard",
-  "/profile",
-  "/patient",
-  "/doctor",
-  "/nurse",
-  "/admin",
+// Auth routes that should NOT require authentication
+// These must be checked FIRST before protected routes
+const authRoutes = [
+  "/doctor/login",
+  "/doctor/signup",
+  "/nurse/login",
+  "/nurse/signup",
+  "/patient/login",
+  "/patient/signup",
+  "/auth",
 ];
 
-// Auth routes that should redirect to dashboard if already logged in
-const authRoutes = ["/login", "/signup", "/auth"];
+// Protected routes that require authentication
+// Dashboard routes for each role
+const protectedRoutes = [
+  "/patient/dashboard",
+  "/patient/medications",
+  "/patient/reports",
+  "/doctor/dashboard",
+  "/nurse/dashboard",
+  "/nurse/patient", // Nurse viewing patient details
+  "/admin",
+  "/profile",
+];
 
 export async function middleware(request: NextRequest) {
   const { user, supabaseResponse } = await updateSession(request);
   const pathname = request.nextUrl.pathname;
 
-  // Check if the current path is a protected route
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => pathname.startsWith(route) || pathname.includes(route)
-  );
+  // Check if the current path is an auth route (login/signup) - CHECK FIRST
+  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
-  // Check if the current path is an auth route
-  const isAuthRoute = authRoutes.some(
-    (route) => pathname.startsWith(route) || pathname.includes(route)
-  );
+  // Check if the current path is a protected route
+  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
+
+  // Auth routes should be accessible to unauthenticated users
+  // If authenticated user accesses auth routes, redirect to appropriate dashboard
+  if (isAuthRoute) {
+    if (user) {
+      // User is logged in but trying to access login/signup page
+      // Redirect to home where they can navigate to their dashboard
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+    // Allow unauthenticated access to auth routes
+    return supabaseResponse;
+  }
 
   // If user is not authenticated and trying to access protected route
   if (!user && isProtectedRoute) {
@@ -34,13 +54,6 @@ export async function middleware(request: NextRequest) {
     // Store the original URL to redirect back after login
     redirectUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(redirectUrl);
-  }
-
-  // If user is authenticated and trying to access auth routes, redirect to appropriate dashboard
-  if (user && isAuthRoute) {
-    // TODO: Get user role from database/metadata and redirect to appropriate dashboard
-    // For now, redirect to home page where they can navigate
-    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return supabaseResponse;
