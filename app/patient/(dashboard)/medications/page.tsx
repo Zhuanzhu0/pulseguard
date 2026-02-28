@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { initialPatients, Patient } from "@/lib/mock-data";
+import { useState, useEffect } from "react";
+import { initialPatients, Patient, getStoredPatients, savePatients } from "@/lib/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,13 +11,33 @@ import { toast } from "sonner";
 export default function MedicationsPage() {
     const [patient, setPatient] = useState<Patient>(initialPatients[0]);
 
+    // Load from local storage on mount
+    useEffect(() => {
+        const storedPatients = getStoredPatients();
+        // Assuming the current user is always the first patient for this demo
+        // In a real app, we'd find the patient by ID from auth context
+        if (storedPatients && storedPatients.length > 0) {
+            setPatient(storedPatients[0]);
+        }
+    }, []);
+
     const handleTakeMedication = (medId: string) => {
-        setPatient(prev => ({
-            ...prev,
-            medications: prev.medications.map(med =>
-                med.id === medId ? { ...med, status: "taken" } : med
+        const updatedPatient = {
+            ...patient,
+            medications: patient.medications.map(med =>
+                med.id === medId ? { ...med, status: 'taken' as const } : med
             )
-        }));
+        };
+
+        setPatient(updatedPatient);
+
+        // Update in full list and save
+        const allPatients = getStoredPatients();
+        const updatedAllPatients = allPatients.map(p =>
+            p.id === updatedPatient.id ? updatedPatient : p
+        );
+        savePatients(updatedAllPatients);
+
         toast.success("Medication Recorded", {
             description: "Great job keeping up with your schedule!"
         });
@@ -48,16 +68,16 @@ export default function MedicationsPage() {
                             </h3>
                             <div className="grid gap-4">
                                 {meds.map(med => (
-                                    <Card key={med.id} className={`transition-all ${med.status === 'taken' ? 'opacity-60 bg-slate-50' : 'bg-white border-blue-100 shadow-sm'}`}>
-                                        <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <Card key={med.id} className={`transition-all rounded-2xl ${med.status === 'taken' ? 'opacity-60 bg-slate-50' : 'bg-white border-blue-100 shadow-sm'}`}>
+                                        <CardContent className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                             <div className="flex items-start gap-4">
                                                 <div className={`p-3 rounded-full ${med.status === 'taken' ? 'bg-green-100 text-green-600' :
-                                                        med.status === 'missed' ? 'bg-red-100 text-red-600' :
-                                                            'bg-blue-100 text-blue-600'
+                                                    med.status === 'missed' ? 'bg-red-100 text-red-600' :
+                                                        'bg-blue-100 text-blue-600'
                                                     }`}>
                                                     {med.status === 'taken' ? <Check className="h-6 w-6" /> : <Clock className="h-6 w-6" />}
                                                 </div>
-                                                <div>
+                                                <div className="space-y-1">
                                                     <div className="flex items-center gap-2">
                                                         <h4 className={`text-lg font-bold ${med.status === 'taken' ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
                                                             {med.name}

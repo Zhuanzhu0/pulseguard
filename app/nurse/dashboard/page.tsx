@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { initialPatients, type Patient, fluctuateVitals } from "@/lib/mock-data";
@@ -17,6 +18,7 @@ export default function NurseDashboard() {
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<"All" | "CRITICAL" | "WARNING">("All");
     const [admitOpen, setAdmitOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     // Simulate real-time updates
@@ -28,6 +30,7 @@ export default function NurseDashboard() {
             const { getStoredPatients } = await import("@/lib/mock-data");
             const stored = getStoredPatients();
             setPatients(stored);
+            setIsLoading(false);
         };
         loadData();
     }, []);
@@ -133,6 +136,32 @@ export default function NurseDashboard() {
     const criticalCount = patients.filter((p) => p.status === "Critical").length;
     const warningCount = patients.filter((p) => p.status === "Warning").length;
 
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-muted p-4 sm:p-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+                    <div>
+                        <div className="h-9 w-64 bg-muted-foreground/20 rounded animate-pulse" />
+                        <div className="h-5 w-48 bg-muted-foreground/10 rounded mt-2 animate-pulse" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                        <div key={i} className="bg-card rounded-xl p-4 shadow-sm border animate-pulse">
+                            <div className="h-6 w-32 bg-muted-foreground/20 rounded mb-4" />
+                            <div className="space-y-3">
+                                <div className="h-4 w-full bg-muted-foreground/10 rounded" />
+                                <div className="h-4 w-3/4 bg-muted-foreground/10 rounded" />
+                                <div className="h-4 w-1/2 bg-muted-foreground/10 rounded" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-muted p-4 sm:p-8">
             <AdmitPatientModal
@@ -145,7 +174,7 @@ export default function NurseDashboard() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-                        <img src="/logo.svg" alt="PulseGuard Logo" className="w-8 h-8 object-contain" />
+                        <Image src="/logo.svg" alt="PulseGuard Logo" width={32} height={32} className="object-contain" />
                         Nurse Dashboard
                     </h1>
                     <p className="text-muted-foreground">

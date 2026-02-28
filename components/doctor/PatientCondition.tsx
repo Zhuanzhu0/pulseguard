@@ -197,7 +197,7 @@ export default function PatientCondition({ patient, onUpdateStatus }: PatientCon
                     <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1">
                         {patient.nurseReports && patient.nurseReports.length > 0 ? (
                             patient.nurseReports.map((report: NurseReport, idx: number) => (
-                                <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors">
+                                <div key={report.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors">
                                     <div className="flex justify-between items-start mb-2">
                                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                                             Daily Report

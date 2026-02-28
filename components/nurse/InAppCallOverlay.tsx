@@ -19,19 +19,24 @@ export function InAppCallOverlay({ doctorName, onEndCall }: InAppCallOverlayProp
 
     // Simulate call lifecycle
     useEffect(() => {
-        let timer: NodeJS.Timeout;
+        let timeoutId: NodeJS.Timeout | undefined;
+        let intervalId: NodeJS.Timeout | undefined;
 
         if (callState === "connecting") {
-            timer = setTimeout(() => setCallState("ringing"), 1500);
+            timeoutId = setTimeout(() => setCallState("ringing"), 1500);
         } else if (callState === "ringing") {
-            timer = setTimeout(() => setCallState("connected"), 2500);
+            timeoutId = setTimeout(() => setCallState("connected"), 2500);
         } else if (callState === "connected") {
-            timer = setInterval(() => {
+            intervalId = setInterval(() => {
                 setDuration(prev => prev + 1);
             }, 1000);
         }
 
-        return () => clearTimeout(timer); // Cleanup
+        return () => {
+            // Cleanup both timeout and interval
+            if (timeoutId) clearTimeout(timeoutId);
+            if (intervalId) clearInterval(intervalId);
+        };
     }, [callState]);
 
     const formatTime = (seconds: number) => {

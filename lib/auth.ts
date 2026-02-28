@@ -1,4 +1,7 @@
+"use client";
+
 import { supabase } from "./supabase";
+import { logger } from "./logger";
 
 export type UserRole = "doctor" | "nurse" | "patient";
 
@@ -19,7 +22,7 @@ export interface AuthError {
 /**
  * Map Supabase auth errors to user-friendly messages
  */
-function mapAuthError(error: any): string {
+function mapAuthError(error: unknown): string {
     // Safety check for error object
     if (!error) return "Unknown error occurred";
 
@@ -30,15 +33,17 @@ function mapAuthError(error: any): string {
     } else if (error instanceof Error) {
         message = error.message;
     } else if (error && typeof error === "object") {
-        message = error.message || error.error_description || JSON.stringify(error);
+        const errObj = error as { message?: string; error_description?: string };
+        message = errObj.message || errObj.error_description || JSON.stringify(error);
     }
 
     // Network errors - catch AuthRetryableFetchError specifically by name or content
+    const errWithName = error as { name?: string; code?: string };
     if (
         message.includes("fetch failed") ||
         message.includes("Network request failed") ||
         message.includes("AuthRetryableFetchError") ||
-        (error && typeof error === "object" && (error.name === "AuthRetryableFetchError" || error.code === "PGRST301"))
+        (error && typeof error === "object" && (errWithName.name === "AuthRetryableFetchError" || errWithName.code === "PGRST301"))
     ) {
         return "Network connection failed. Please check your internet connection.";
     }
@@ -79,7 +84,9 @@ export async function signUpUser(
     email: string,
     password: string,
     fullName: string,
-    role: UserRole
+    role: UserRole,
+    department?: string,
+    phone?: string
 ): Promise<{ user: any; session: any; error: AuthError | null }> {
     try {
         // 1. Create auth user
@@ -90,6 +97,8 @@ export async function signUpUser(
                 data: {
                     full_name: fullName,
                     role: role,
+                    department: department,
+                    phone: phone,
                 },
             },
         });
@@ -99,14 +108,15 @@ export async function signUpUser(
         // User profile is created automatically by database trigger
 
         return { user: authData.user, session: authData.session, error: null };
-    } catch (error: any) {
-        console.error("Signup error:", error);
+    } catch (error: unknown) {
+        logger.error("Signup error:", error);
+        const err = error as { status?: number; message?: string };
         return {
             user: null,
             session: null,
             error: {
                 message: mapAuthError(error),
-                status: error?.status
+                status: err?.status
             }
         };
     }
@@ -127,14 +137,15 @@ export async function signInUser(
 
         if (error) throw error;
         return { user: data.user, session: data.session, error: null };
-    } catch (error: any) {
-        console.error("Sign in error:", error);
+    } catch (error: unknown) {
+        logger.error("Sign in error:", error);
+        const err = error as { status?: number; message?: string };
         return {
             user: null,
             session: null,
             error: {
                 message: mapAuthError(error),
-                status: error?.status
+                status: err?.status
             }
         };
     }
@@ -180,15 +191,16 @@ export async function signInWithProfile(
         }
 
         return { user, session, profile, error: null };
-    } catch (error: any) {
-        console.error("Sign in with profile error:", error);
+    } catch (error: unknown) {
+        logger.error("Sign in with profile error:", error);
+        const err = error as { status?: number; message?: string };
         return {
             user: null,
             session: null,
             profile: null,
             error: {
-                message: error?.message || "Sign in failed",
-                status: error?.status
+                message: err?.message || "Sign in failed",
+                status: err?.status
             }
         };
     }
@@ -202,8 +214,8 @@ export async function signOutUser() {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
         return { error: null };
-    } catch (error) {
-        console.error("Sign out error:", error);
+    } catch (error: unknown) {
+        logger.error("Sign out error:", error);
         return { error };
     }
 }
@@ -220,8 +232,8 @@ export async function getCurrentUser() {
 
         if (error) throw error;
         return { user, error: null };
-    } catch (error) {
-        console.error("Get current user error:", error);
+    } catch (error: unknown) {
+        logger.error("Get current user error:", error);
         return { user: null, error };
     }
 }
@@ -231,7 +243,7 @@ export async function getCurrentUser() {
  */
 export async function getUserProfile(userId: string): Promise<{
     profile: UserProfile | null;
-    error: any;
+    error: unknown;
 }> {
     try {
         const { data, error } = await supabase
@@ -242,8 +254,8 @@ export async function getUserProfile(userId: string): Promise<{
 
         if (error) throw error;
         return { profile: data as UserProfile, error: null };
-    } catch (error) {
-        console.error("Get user profile error:", error);
+    } catch (error: unknown) {
+        logger.error("Get user profile error:", error);
         return { profile: null, error };
     }
 }
@@ -253,7 +265,7 @@ export async function getUserProfile(userId: string): Promise<{
  */
 export async function getCurrentUserRole(): Promise<{
     role: UserRole | null;
-    error: any;
+    error: unknown;
 }> {
     try {
         const { user, error: userError } = await getCurrentUser();
@@ -267,8 +279,8 @@ export async function getCurrentUserRole(): Promise<{
         }
 
         return { role: profile.role, error: null };
-    } catch (error) {
-        console.error("Get current user role error:", error);
+    } catch (error: unknown) {
+        logger.error("Get current user role error:", error);
         return { role: null, error };
     }
 }
@@ -285,8 +297,8 @@ export async function checkSession() {
 
         if (error) throw error;
         return { session, error: null };
-    } catch (error) {
-        console.error("Check session error:", error);
+    } catch (error: unknown) {
+        logger.error("Check session error:", error);
         return { session: null, error };
     }
 }
@@ -299,8 +311,8 @@ export async function verifyUserRole(expectedRole: UserRole): Promise<boolean> {
         const { role, error } = await getCurrentUserRole();
         if (error || !role) return false;
         return role === expectedRole;
-    } catch (error) {
-        console.error("Verify user role error:", error);
+    } catch (error: unknown) {
+        logger.error("Verify user role error:", error);
         return false;
     }
 }
@@ -311,8 +323,8 @@ export async function verifyUserRole(expectedRole: UserRole): Promise<boolean> {
 export async function verifyEmailOtp(
     email: string,
     token: string,
-    type: any = 'signup'
-): Promise<{ data: any; error: any | null }> {
+    type: 'signup' | 'recovery' | 'invite' | 'magiclink' | 'email_change' = 'signup'
+): Promise<{ data: unknown; error: AuthError | null }> {
     try {
         const { data, error } = await supabase.auth.verifyOtp({
             email,
@@ -322,18 +334,16 @@ export async function verifyEmailOtp(
 
         if (error) throw error;
         return { data, error: null };
-    } catch (error: any) {
-        console.error("Verify OTP error:", error);
+    } catch (error: unknown) {
+        logger.error("Verify OTP error:", error);
+        const err = error as { status?: number; message?: string };
         return {
             data: null,
             error: {
-                message: error?.message || "Verification failed",
-                status: error?.status,
+                message: err?.message || "Verification failed",
+                status: err?.status,
             },
         };
     }
 }
-/**
- * Verify email with OTP token
- */
 

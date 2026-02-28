@@ -1,4 +1,3 @@
-"use strict";
 "use client";
 
 import { useState, useEffect } from "react";
@@ -16,6 +15,11 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import {
+    loginSchema,
+    signupSchema,
+    safeParse,
+} from "@/lib/validations/auth";
 
 interface AuthFormProps {
     role: "doctor" | "nurse" | "patient";
@@ -29,6 +33,8 @@ export function AuthForm({ role, type }: AuthFormProps) {
     const [isVerifying, setIsVerifying] = useState(false);
     const [pendingEmail, setPendingEmail] = useState("");
 
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
     // Check session state (from master branch)
     const [checkingSession, setCheckingSession] = useState(true);
     const [existingSession, setExistingSession] = useState<{
@@ -38,6 +44,8 @@ export function AuthForm({ role, type }: AuthFormProps) {
 
     // Check for existing session on mount (from master branch)
     useEffect(() => {
+        let isMounted = true;
+
         async function checkExistingSession() {
             // Only check session for login pages, not signup
             if (type !== "login") {
@@ -50,29 +58,35 @@ export function AuthForm({ role, type }: AuthFormProps) {
                 const { getCurrentUser, getUserProfile } = await import("@/lib/auth");
 
                 const { user } = await getCurrentUser();
-                if (!user) {
-                    setCheckingSession(false);
+                if (!user || !isMounted) {
+                    if (isMounted) setCheckingSession(false);
                     return;
                 }
 
                 const { profile } = await getUserProfile(user.id);
-                if (profile) {
+                if (profile && isMounted) {
                     setExistingSession({ isLoggedIn: true, role: profile.role });
                 }
             } catch (err) {
-                console.error("Session check error:", err);
+                // Silently handle session check errors - user will just see login form
+                void err;
             } finally {
-                setCheckingSession(false);
+                if (isMounted) setCheckingSession(false);
             }
         }
 
         checkExistingSession();
+
+        return () => {
+            isMounted = false;
+        };
     }, [type]);
 
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setIsLoading(true);
         setError(null);
+        setFieldErrors({});
 
         const formData = new FormData(event.currentTarget);
 
@@ -89,7 +103,7 @@ export function AuthForm({ role, type }: AuthFormProps) {
                 }
 
                 // Verification successful
-                router.push(`/${role}/dashboard`); // Or login
+                router.push(`/${role}/dashboard`);
                 return;
             }
 
@@ -97,6 +111,13 @@ export function AuthForm({ role, type }: AuthFormProps) {
             const password = formData.get("password") as string;
 
             if (type === "login") {
+                // Validate login form
+                const validation = safeParse(loginSchema, { email, password });
+                if (!validation.success) {
+                    setFieldErrors(validation.errors);
+                    return;
+                }
+
                 const { signInWithProfile } = await import("@/lib/auth");
                 const { profile, error: authError } = await signInWithProfile(email, password);
 
@@ -121,6 +142,20 @@ export function AuthForm({ role, type }: AuthFormProps) {
             } else {
                 // Signup flow
                 const fullName = formData.get("fullName") as string;
+                const confirmPassword = formData.get("confirmPassword") as string;
+
+                // Validate signup form
+                const validation = safeParse(signupSchema, {
+                    email,
+                    password,
+                    confirmPassword,
+                    fullName,
+                });
+                if (!validation.success) {
+                    setFieldErrors(validation.errors);
+                    return;
+                }
+
                 const { signUpUser } = await import("@/lib/auth");
 
                 const { user, session, error: authError } = await signUpUser(
@@ -155,10 +190,11 @@ export function AuthForm({ role, type }: AuthFormProps) {
                 // Switch to verification mode (email confirmation enabled)
                 setPendingEmail(email);
                 setIsVerifying(true);
-                setError(null); // Clear any errors
+                setError(null);
             }
         } catch (err) {
-            console.error("Authentication error:", err);
+            // Unexpected errors are handled generically
+            void err;
             setError("An unexpected error occurred. Please try again.");
         } finally {
             setIsLoading(false);
@@ -304,7 +340,11 @@ export function AuthForm({ role, type }: AuthFormProps) {
                                 required
                                 disabled={isLoading}
                                 autoComplete="name"
+                                className={fieldErrors.fullName ? "border-red-500" : ""}
                             />
+                            {fieldErrors.fullName && (
+                                <p className="text-sm text-red-500">{fieldErrors.fullName}</p>
+                            )}
                         </div>
                     )}
                     <div className="space-y-2">
@@ -317,7 +357,11 @@ export function AuthForm({ role, type }: AuthFormProps) {
                             required
                             disabled={isLoading}
                             autoComplete="email"
+                            className={fieldErrors.email ? "border-red-500" : ""}
                         />
+                        {fieldErrors.email && (
+                            <p className="text-sm text-red-500">{fieldErrors.email}</p>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="password">Password</Label>
@@ -327,9 +371,30 @@ export function AuthForm({ role, type }: AuthFormProps) {
                             type="password"
                             required
                             disabled={isLoading}
-                            autoComplete="current-password"
+                            autoComplete={type === "login" ? "current-password" : "new-password"}
+                            className={fieldErrors.password ? "border-red-500" : ""}
                         />
+                        {fieldErrors.password && (
+                            <p className="text-sm text-red-500">{fieldErrors.password}</p>
+                        )}
                     </div>
+                    {type === "signup" && (
+                        <div className="space-y-2">
+                            <Label htmlFor="confirmPassword">Confirm Password</Label>
+                            <Input
+                                id="confirmPassword"
+                                name="confirmPassword"
+                                type="password"
+                                required
+                                disabled={isLoading}
+                                autoComplete="new-password"
+                                className={fieldErrors.confirmPassword ? "border-red-500" : ""}
+                            />
+                            {fieldErrors.confirmPassword && (
+                                <p className="text-sm text-red-500">{fieldErrors.confirmPassword}</p>
+                            )}
+                        </div>
+                    )}
                     {error && (
                         <div className="text-sm text-red-500 font-medium">{error}</div>
                     )}
