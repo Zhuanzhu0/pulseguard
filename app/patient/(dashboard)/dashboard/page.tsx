@@ -106,6 +106,8 @@ export default function PatientDashboard() {
 
     // Listen for sync updates
     useEffect(() => {
+        let mounted = true;
+        
         setLastUpdate(new Date());
 
         // Load user name and data from localStorage
@@ -113,12 +115,15 @@ export default function PatientDashboard() {
             const { getStoredPatients } = await import("@/lib/mock-data");
             const storedPatients = getStoredPatients();
             const myself = storedPatients.find(p => p.id === "p1");
-            if (myself) {
+            if (mounted && myself) {
                 setPatient(myself);
             }
-            setIsLoading(false);
+            if (mounted) {
+                setIsLoading(false);
+            }
         };
         loadData();
+
         const handleVitalSync = (event: VitalSyncEvent) => {
             setPatient(prev => {
                 if (!prev) return prev;
@@ -131,7 +136,10 @@ export default function PatientDashboard() {
         };
 
         window.addEventListener("vital-sync", handleVitalSync);
-        return () => window.removeEventListener("vital-sync", handleVitalSync);
+        return () => {
+            mounted = false;
+            window.removeEventListener("vital-sync", handleVitalSync);
+        };
     }, []);
 
     // Loading state
