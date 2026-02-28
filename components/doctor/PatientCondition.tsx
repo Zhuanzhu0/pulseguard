@@ -153,7 +153,7 @@ export default function PatientCondition({ patient, onUpdateStatus }: PatientCon
                                         boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                                         padding: '12px'
                                     }}
-                                    formatter={(value: any, name: any) => [Math.round(Number(value)), name === 'hr' ? 'Heart Rate' : 'SpO2']}
+                                    formatter={(value, name) => [Math.round(Number(value ?? 0)), name === 'hr' ? 'Heart Rate' : 'SpO2']}
                                 />
                                 <Line
                                     yAxisId="left"
@@ -251,7 +251,17 @@ export default function PatientCondition({ patient, onUpdateStatus }: PatientCon
     );
 }
 
-function VitalCard({ label, value, unit, icon: Icon, color, bgColor, borderColor }: any) {
+interface VitalCardProps {
+    label: string;
+    value: string | number;
+    unit: string;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    bgColor: string;
+    borderColor: string;
+}
+
+function VitalCard({ label, value, unit, icon: Icon, color, bgColor, borderColor }: VitalCardProps) {
     return (
         <div className={`p-4 rounded-2xl border ${borderColor} ${bgColor} flex items-center justify-between`}>
             <div>

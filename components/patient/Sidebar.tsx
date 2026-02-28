@@ -34,6 +34,7 @@ export function PatientSidebar() {
                                         ? "bg-blue-600 text-white"
                                         : "text-slate-900 hover:bg-slate-100"
                                         }`}
+                                    aria-current={isActive ? "page" : undefined}
                                 >
                                     <item.icon
                                         className={`h-5 w-5 transition duration-75 ${isActive ? "text-white" : "text-slate-500 group-hover:text-slate-900"
@@ -46,13 +47,15 @@ export function PatientSidebar() {
                     })}
                 </ul>
                 <div className="mt-auto border-t border-slate-200 pt-4 space-y-2">
-                    <Link
-                        href="#"
-                        className="group flex items-center rounded-lg p-2 text-slate-900 hover:bg-slate-100"
+                    <button
+                        type="button"
+                        className="group flex w-full items-center rounded-lg p-2 text-slate-900 hover:bg-slate-100"
+                        onClick={() => { /* TODO: Implement settings modal or navigation */ }}
+                        aria-label="Open settings"
                     >
                         <Settings className="h-5 w-5 text-slate-500 transition duration-75 group-hover:text-slate-900" />
                         <span className="ml-3">Settings</span>
-                    </Link>
+                    </button>
                     <Link
                         href="/patient/login"
                         className="group flex items-center rounded-lg p-2 text-red-600 hover:bg-red-50"
