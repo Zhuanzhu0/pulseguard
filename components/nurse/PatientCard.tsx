@@ -47,8 +47,13 @@ export function PatientCard({ patient }: PatientCardProps) {
                         </div>
                         <div className="flex flex-col items-end">
                             <span className="text-muted-foreground text-xs">HR / SpO2</span>
-                            <span className="font-medium flex items-center gap-1 text-foreground">
-                                <Activity className="w-3 h-3 text-muted-foreground" />
+                            <span 
+                                className="font-medium flex items-center gap-1 text-foreground"
+                                role="status"
+                                aria-live="polite"
+                                aria-label={`Heart rate ${patient.vitals.heartRate} beats per minute, oxygen saturation ${patient.vitals.spo2} percent`}
+                            >
+                                <Activity className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
                                 {patient.vitals.heartRate} / {patient.vitals.spo2}%
                             </span>
                         </div>

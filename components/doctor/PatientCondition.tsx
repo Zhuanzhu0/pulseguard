@@ -78,8 +78,12 @@ export default function PatientCondition({ patient, onUpdateStatus }: PatientCon
                 </div>
             </div>
 
-            {/* Vitals Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Vitals Grid - aria-live for screen reader announcements */}
+            <div 
+                className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+                role="region"
+                aria-label="Patient vital signs"
+            >
                 <VitalCard
                     label="Heart Rate"
                     value={patient.vitals.heartRate}
@@ -263,14 +267,22 @@ interface VitalCardProps {
 
 function VitalCard({ label, value, unit, icon: Icon, color, bgColor, borderColor }: VitalCardProps) {
     return (
-        <div className={`p-4 rounded-2xl border ${borderColor} ${bgColor} flex items-center justify-between`}>
+        <div 
+            className={`p-4 rounded-2xl border ${borderColor} ${bgColor} flex items-center justify-between`}
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+        >
             <div>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{label}</p>
-                <p className="text-2xl font-bold text-slate-900 leading-none">
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1" id={`vital-${label.replace(/\s+/g, '-').toLowerCase()}-label`}>{label}</p>
+                <p 
+                    className="text-2xl font-bold text-slate-900 leading-none"
+                    aria-labelledby={`vital-${label.replace(/\s+/g, '-').toLowerCase()}-label`}
+                >
                     {value} <span className="text-xs font-normal text-slate-500 ml-0.5">{unit}</span>
                 </p>
             </div>
-            <div className={`p-3 rounded-xl bg-white shadow-sm ${color}`}>
+            <div className={`p-3 rounded-xl bg-white shadow-sm ${color}`} aria-hidden="true">
                 <Icon className="w-6 h-6" />
             </div>
         </div>

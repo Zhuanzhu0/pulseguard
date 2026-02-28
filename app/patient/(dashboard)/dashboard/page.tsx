@@ -23,9 +23,23 @@ declare global {
     }
 }
 
-const VitalsCard = ({ title, value, unit, icon: Icon, color, trend }: any) => (
-    <Card className="relative overflow-hidden rounded-3xl border-none shadow-md bg-white hover:shadow-lg transition-all duration-300 group">
-        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${color} opacity-80`} />
+interface VitalsCardProps {
+    title: string;
+    value: string | number;
+    unit: string;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    trend: 'up' | 'down' | 'stable';
+}
+
+const VitalsCard = ({ title, value, unit, icon: Icon, color, trend }: VitalsCardProps) => (
+    <Card 
+        className="relative overflow-hidden rounded-3xl border-none shadow-md bg-white hover:shadow-lg transition-all duration-300 group"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+    >
+        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${color} opacity-80`} aria-hidden="true" />
         <CardContent className="p-6 pl-8">
             <div className="flex items-start justify-between mb-4">
                 <div>
@@ -37,15 +51,15 @@ const VitalsCard = ({ title, value, unit, icon: Icon, color, trend }: any) => (
                         <span className="text-sm text-slate-500 font-medium">{unit}</span>
                     </div>
                 </div>
-                <div className={`p-2.5 rounded-2xl transition-colors ${color.replace('bg-', 'bg-opacity-10 bg-')} ${color.replace('bg-', 'text-')}`}>
+                <div className={`p-2.5 rounded-2xl transition-colors ${color.replace('bg-', 'bg-opacity-10 bg-')} ${color.replace('bg-', 'text-')}`} aria-hidden="true">
                     <Icon className="h-5 w-5" />
                 </div>
             </div>
             <div className="flex items-center gap-2 text-sm pt-2 border-t border-slate-50">
-                {trend === 'up' && <ArrowUp className="h-4 w-4 text-rose-500" />}
-                {trend === 'down' && <ArrowDown className="h-4 w-4 text-emerald-500" />}
-                {trend === 'stable' && <ArrowRight className="h-4 w-4 text-slate-400" />}
-                <span className="text-slate-500 font-medium">vs last hour</span>
+                {trend === 'up' && <ArrowUp className="h-4 w-4 text-rose-500" aria-hidden="true" />}
+                {trend === 'down' && <ArrowDown className="h-4 w-4 text-emerald-500" aria-hidden="true" />}
+                {trend === 'stable' && <ArrowRight className="h-4 w-4 text-slate-400" aria-hidden="true" />}
+                <span className="text-slate-500 font-medium" aria-label={`Trend: ${trend} compared to last hour`}>vs last hour</span>
             </div>
         </CardContent>
     </Card>
