@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AVATAR_CONFIG } from "@/lib/config/external-services";
 
 interface InAppCallOverlayProps {
     doctorName: string;
@@ -64,7 +65,7 @@ export function InAppCallOverlay({ doctorName, onEndCall }: InAppCallOverlayProp
                         <div className="absolute inset-0 bg-blue-500/20 rounded-full animate-ping" />
                     )}
                     <Avatar className="w-32 h-32 border-4 border-white shadow-2xl">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${doctorName}`} />
+                        <AvatarImage src={AVATAR_CONFIG.getAvatarUrl(doctorName)} />
                         <AvatarFallback className="bg-muted text-muted-foreground text-3xl">
                             {doctorName.split(' ').map(n => n[0]).join('')}
                         </AvatarFallback>
